@@ -173,15 +173,10 @@
         await delay(700); // wait 700ms between each card
         if (calculateScore(playerCards) > 21) {
           resultEl.innerText = 'You Bust! Dealer Wins!';
+          playSound('sound-lose');
           disableButtons();
         }
       }
-      if (calculateScore(playerCards) > 21) {
-  resultEl.innerText = 'You Bust! Dealer Wins!';
-  playSound('sound-lose');
-  disableButtons();
-}
-
     }
 
     async function dealerTurn() {
