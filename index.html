@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Blackjack Game</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Font Awesome for card suits -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <style>
+    body {
+      background: #1e3d59;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding-top: 30px;
+    }
+
+    .card-box {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    .playing-card {
+      width: 60px;
+      height: 90px;
+      background: white;
+      color: black;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+      animation: flipIn 0.4s ease;
+    }
+
+    .playing-card.red {
+      color: red;
+    }
+
+    @keyframes flipIn {
+      from {
+        transform: rotateY(90deg);
+        opacity: 0;
+      }
+      to {
+        transform: rotateY(0);
+        opacity: 1;
+      }
+    }
+
+    .btn {
+      margin: 0 10px;
+    }
+
+    #result {
+      font-size: 24px;
+      margin-top: 20px;
+    }
+
+    .score {
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1 class="mb-4">🃏 Blackjack</h1>
+
+    <div class="mb-4">
+      <h3>Dealer <span id="dealer-score" class="score">(0)</span></h3>
+      <div class="card-box" id="dealer-cards"></div>
+    </div>
+
+    <div class="mb-4">
+      <h3>You <span id="player-score" class="score">(0)</span></h3>
+      <div class="card-box" id="player-cards"></div>
+    </div>
+
+    <div class="mb-4">
+      <button id="hit" class="btn btn-success">Hit</button>
+      <button id="stand" class="btn btn-warning">Stand</button>
+      <button id="restart" class="btn btn-secondary">Restart</button>
+    </div>
+
+    <div id="result" class="fw-bold"></div>
+  </div>
+
+  <script>
+    const suits = ['fa-spade', 'fa-heart', 'fa-diamond', 'fa-club'];
+    const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+    let deck = [];
+    let playerCards = [];
+    let dealerCards = [];
+
+    const dealerScoreEl = document.getElementById('dealer-score');
+    const playerScoreEl = document.getElementById('player-score');
+    const dealerCardsEl = document.getElementById('dealer-cards');
+    const playerCardsEl = document.getElementById('player-cards');
+    const resultEl = document.getElementById('result');
+
+    document.getElementById('hit').addEventListener('click', playerHit);
+    document.getElementById('stand').addEventListener('click', dealerTurn);
+    document.getElementById('restart').addEventListener('click', startGame);
+
+    function createDeck() {
+      deck = [];
+      for (let suit of suits) {
+        for (let value of values) {
+          deck.push({ value, suit });
+        }
+      }
+      deck.sort(() => Math.random() - 0.5);
+    }
+
+    function getCardValue(card) {
+      if (['J', 'Q', 'K'].includes(card.value)) return 10;
+      if (card.value === 'A') return 11;
+      return parseInt(card.value);
+    }
+
+    function calculateScore(cards) {
+      let score = 0;
+      let aces = 0;
+      for (let card of cards) {
+        score += getCardValue(card);
+        if (card.value === 'A') aces++;
+      }
+      while (score > 21 && aces > 0) {
+        score -= 10;
+        aces--;
+      }
+      return score;
+    }
+
+    function displayCards(container, cards) {
+      container.innerHTML = '';
+      for (let card of cards) {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'playing-card ' + (card.suit === 'fa-heart' || card.suit === 'fa-diamond' ? 'red' : '');
+        cardEl.innerHTML = `${card.value} <i class="fa-solid ${card.suit}"></i>`;
+        container.appendChild(cardEl);
+      }
+    }
+
+    function updateGame() {
+      displayCards(playerCardsEl, playerCards);
+      displayCards(dealerCardsEl, dealerCards);
+      playerScoreEl.innerText = `(${calculateScore(playerCards)})`;
+      dealerScoreEl.innerText = `(${calculateScore(dealerCards)})`;
+    }
+
+    function playerHit() {
+      if (calculateScore(playerCards) < 21) {
+        playerCards.push(deck.pop());
+        updateGame();
+        if (calculateScore(playerCards) > 21) {
+          resultEl.innerText = 'You Bust! Dealer Wins!';
+          disableButtons();
+        }
+      }
+    }
+
+    function dealerTurn() {
+      disableButtons();
+      while (calculateScore(dealerCards) < 17) {
+        dealerCards.push(deck.pop());
+      }
+      updateGame();
+
+      const playerScore = calculateScore(playerCards);
+      const dealerScore = calculateScore(dealerCards);
+
+      if (dealerScore > 21 || playerScore > dealerScore) {
+        resultEl.innerText = '🎉 You Win!';
+      } else if (playerScore === dealerScore) {
+        resultEl.innerText = '🤝 It\'s a Draw!';
+      } else {
+        resultEl.innerText = '💀 Dealer Wins!';
+      }
+    }
+
+    function disableButtons() {
+      document.getElementById('hit').disabled = true;
+      document.getElementById('stand').disabled = true;
+    }
+
+    function startGame() {
+      createDeck();
+      playerCards = [deck.pop(), deck.pop()];
+      dealerCards = [deck.pop()];
+      resultEl.innerText = '';
+      document.getElementById('hit').disabled = false;
+      document.getElementById('stand').disabled = false;
+      updateGame();
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
