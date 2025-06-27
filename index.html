@@ -95,6 +95,10 @@
 
     <div id="result" class="fw-bold"></div>
   </div>
+    <audio id="sound-card" src="/sound/deal.ogg"></audio>
+    <audio id="sound-win" src="/sound/win.wav"></audio>
+    <audio id="sound-lose" src="/sound/lose.flac"></audio>
+    <audio id="sound-draw" src="/sound/draw.flac"></audio>
 
   <script>
     const suits = ['fa-spade', 'fa-heart', 'fa-diamond', 'fa-club'];
@@ -161,35 +165,50 @@
       dealerScoreEl.innerText = `(${calculateScore(dealerCards)})`;
     }
 
-    function playerHit() {
+    async function playerHit() {
       if (calculateScore(playerCards) < 21) {
         playerCards.push(deck.pop());
         updateGame();
+        playSound('sound-card');
+        await delay(700); // wait 700ms between each card
         if (calculateScore(playerCards) > 21) {
           resultEl.innerText = 'You Bust! Dealer Wins!';
           disableButtons();
         }
       }
+      if (calculateScore(playerCards) > 21) {
+  resultEl.innerText = 'You Bust! Dealer Wins!';
+  playSound('sound-lose');
+  disableButtons();
+}
+
     }
 
-    function dealerTurn() {
-      disableButtons();
-      while (calculateScore(dealerCards) < 17) {
-        dealerCards.push(deck.pop());
-      }
-      updateGame();
+    async function dealerTurn() {
+  disableButtons();
 
-      const playerScore = calculateScore(playerCards);
-      const dealerScore = calculateScore(dealerCards);
+  while (calculateScore(dealerCards) < 17) {
+    dealerCards.push(deck.pop());
+    updateGame();
+    playSound('sound-card');
+    await delay(700); // wait 700ms between each card
+  }
 
-      if (dealerScore > 21 || playerScore > dealerScore) {
-        resultEl.innerText = '🎉 You Win!';
-      } else if (playerScore === dealerScore) {
-        resultEl.innerText = '🤝 It\'s a Draw!';
-      } else {
-        resultEl.innerText = '💀 Dealer Wins!';
-      }
-    }
+  const playerScore = calculateScore(playerCards);
+  const dealerScore = calculateScore(dealerCards);
+
+  if (dealerScore > 21 || playerScore > dealerScore) {
+    resultEl.innerText = '🎉 You Win!';
+    playSound('sound-win');
+  } else if (playerScore === dealerScore) {
+    resultEl.innerText = '🤝 It\'s a Draw!';
+    playSound('sound-draw');
+  } else {
+    resultEl.innerText = '💀 Dealer Wins!';
+    playSound('sound-lose');
+  }
+}
+
 
     function disableButtons() {
       document.getElementById('hit').disabled = true;
@@ -207,6 +226,19 @@
     }
 
     startGame();
+
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function playSound(id) {
+  const sound = document.getElementById(id);
+  if (sound) {
+    sound.currentTime = 0; // Rewind
+    sound.play();
+  }
+}
+
   </script>
 </body>
 </html>
